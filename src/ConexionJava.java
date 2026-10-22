@@ -61,8 +61,7 @@ public class ConexionJava extends JFrame {
         if (servidor.isEmpty() || usuario.isEmpty()) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Introduce el servidor y el usuario."
-            );
+                    "Introduce el servidor y el usuario.");
             return;
         }
 
@@ -72,8 +71,7 @@ public class ConexionJava extends JFrame {
             if (numeroPuerto < 1 || numeroPuerto > 45003) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "El puerto debe estar entre 1 y 45003."
-                );
+                        "El puerto debe estar entre 1 y 45003.");
                 return;
             }
 
@@ -81,8 +79,7 @@ public class ConexionJava extends JFrame {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Introduce un puerto válido."
-            );
+                    "Introduce un puerto válido.");
             return;
         }
 
@@ -92,13 +89,11 @@ public class ConexionJava extends JFrame {
                 Connection con = DriverManager.getConnection(
                         url,
                         usuario,
-                        new String(txtPassword.getPassword())
-                );
+                        new String(txtPassword.getPassword()));
 
                 Statement st = con.createStatement();
 
-                ResultSet rs = st.executeQuery("SHOW DATABASES")
-        ) {
+                ResultSet rs = st.executeQuery("SHOW DATABASES")) {
 
             while (rs.next()) {
                 cbBases.addItem(rs.getString(1));
@@ -107,8 +102,7 @@ public class ConexionJava extends JFrame {
             if (cbBases.getItemCount() == 0) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "No hay bases de datos disponibles."
-                );
+                        "No hay bases de datos disponibles.");
             }
 
         } catch (SQLException e) {
@@ -116,8 +110,7 @@ public class ConexionJava extends JFrame {
             JOptionPane.showMessageDialog(
                     this,
                     "No se pudieron cargar las bases de datos: "
-                            + e.getMessage()
-            );
+                            + e.getMessage());
         }
     }
 
@@ -128,8 +121,7 @@ public class ConexionJava extends JFrame {
         if (bd == null) {
             JOptionPane.showMessageDialog(
                     this,
-                    "Carga las bases de datos y selecciona una."
-            );
+                    "Carga las bases de datos y selecciona una.");
             return;
         }
 
@@ -144,28 +136,71 @@ public class ConexionJava extends JFrame {
                 Connection con = DriverManager.getConnection(
                         url,
                         txtUsuario.getText().trim(),
-                        new String(txtPassword.getPassword())
-                )
-        ) {
+                        new String(txtPassword.getPassword()))) {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Conexión realizada correctamente"
-            );
+                    "Conexión realizada correctamente");
+
+            mostrarTablas(con);
 
         } catch (SQLException e) {
 
             JOptionPane.showMessageDialog(
                     this,
-                    "Error al conectar: " + e.getMessage()
-            );
+                    "Error al conectar: " + e.getMessage());
         }
+    }
+
+    private void mostrarTablas(Connection con) {
+
+        JFrame ventana = new JFrame("Tablas");
+        ventana.setSize(300, 300);
+        ventana.setLayout(new BorderLayout());
+
+        DefaultListModel<String> modelo = new DefaultListModel<>();
+        JList<String> lista = new JList<>(modelo);
+
+        JButton btnSeleccionar = new JButton("Seleccionar");
+        ventana.add(new JScrollPane(lista), BorderLayout.CENTER);
+        ventana.add(btnSeleccionar, BorderLayout.SOUTH);
+
+        ventana.setVisible(true);
+
+        try {
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery("SHOW TABLES");
+
+            while (rs.next()) {
+                modelo.addElement(rs.getString(1));
+            }
+
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al cargar tablas");
+        }
+
+        btnSeleccionar.addActionListener(e -> {
+
+            String tabla = lista.getSelectedValue();
+
+            if (tabla == null) {
+                JOptionPane.showMessageDialog(
+                        ventana,
+                        "Selecciona una tabla");
+            } else {
+                JOptionPane.showMessageDialog(
+                        ventana,
+                        "Tabla seleccionada: " + tabla);
+            }
+        });
+
+        ventana.setVisible(true);
+
     }
 
     public static void main(String[] args) {
 
-        SwingUtilities.invokeLater(() ->
-                new ConexionJava().setVisible(true)
-        );
+        SwingUtilities.invokeLater(() -> new ConexionJava().setVisible(true));
     }
 }
