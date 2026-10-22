@@ -1,5 +1,4 @@
 import java.awt.*;
-import java.awt.event.*;
 import java.sql.*;
 import javax.swing.*;
 
@@ -9,203 +8,164 @@ public class ConexionJava extends JFrame {
     private JPasswordField txtPassword;
     private JTextField txtServidor;
     private JTextField txtPuerto;
-    private JComboBox<String> cbBasesDatos;
-    private JLabel lblEstadoBasesDatos;
+    private JComboBox<String> cbBases;
+    private JButton btnCargarBases;
     private JButton btnConectar;
 
     public ConexionJava() {
-        setTitle("MySQL");
-        setSize(400, 320);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        setTitle("Conexión MySQL");
+        setSize(400, 250);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new GridBagLayout());
+        setLayout(new GridLayout(6, 2, 5, 5));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(new JLabel("Usuario:"));
+        txtUsuario = new JTextField("root");
+        add(txtUsuario);
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        add(new JLabel("Usuario:"), gbc);
+        add(new JLabel("Contraseña:"));
+        txtPassword = new JPasswordField();
+        add(txtPassword);
 
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        txtUsuario = new JTextField("root", 15);
-        add(txtUsuario, gbc);
+        add(new JLabel("Servidor:"));
+        txtServidor = new JTextField("127.0.0.1");
+        add(txtServidor);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
-        add(new JLabel("Contraseña:"), gbc);
+        add(new JLabel("Puerto:"));
+        txtPuerto = new JTextField("3306");
+        add(txtPuerto);
 
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        txtPassword = new JPasswordField(15);
-        add(txtPassword, gbc);
+        add(new JLabel("Base de datos:"));
+        cbBases = new JComboBox<>();
+        add(cbBases);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        add(new JLabel("Servidor:"), gbc);
+        btnCargarBases = new JButton("Cargar bases");
+        add(btnCargarBases);
 
-        gbc.gridx = 1; gbc.gridwidth = 1;
-        txtServidor = new JTextField("127.0.0.1", 10);
-        add(txtServidor, gbc);
+        btnConectar = new JButton("Conectar");
+        add(btnConectar);
 
-        gbc.gridx = 2;
-        txtPuerto = new JTextField("3306", 5);
-        add(txtPuerto, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 1;
-        add(new JLabel("Base de datos:"), gbc);
-
-        gbc.gridx = 1; gbc.gridwidth = 1;
-        cbBasesDatos = new JComboBox<>();
-        add(cbBasesDatos, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 3;
-        lblEstadoBasesDatos = new JLabel(" ");
-        add(lblEstadoBasesDatos, gbc);
-
-        gbc.gridx = 1; gbc.gridy = 5; gbc.gridwidth = 1;
-        gbc.insets = new Insets(20, 8, 8, 8);
-        btnConectar = new JButton("CONECTAR");
-        add(btnConectar, gbc);
-
-    
-        btnConectar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (validarCamposSintacticos()) {
-                    realizarConexion();
-                } else {
-                    mostrarResultadoConexion(false);
-                }
-            }
-        });
-
-        FocusAdapter cargarBasesListener = new FocusAdapter() {
-            @Override
-            public void focusLost(FocusEvent e) {
-                cargarBasesDeDatos();
-            }
-        };
-        txtUsuario.addFocusListener(cargarBasesListener);
-        txtPassword.addFocusListener(cargarBasesListener);
-        txtServidor.addFocusListener(cargarBasesListener);
-        txtPuerto.addFocusListener(cargarBasesListener);
-
-        cargarBasesDeDatos();
+        btnCargarBases.addActionListener(e -> cargarBases());
+        btnConectar.addActionListener(e -> conectar());
     }
 
+    private void cargarBases() {
 
-    private boolean validarCamposSintacticos() {
-        String usuario = txtUsuario.getText().trim();
+        cbBases.removeAllItems();
+
         String servidor = txtServidor.getText().trim();
-        String puertoStr = txtPuerto.getText().trim();
+        String puerto = txtPuerto.getText().trim();
+        String usuario = txtUsuario.getText().trim();
 
-        if (usuario.isEmpty() || servidor.isEmpty() || puertoStr.isEmpty()) {
-            return false;
-        }
-
-        try {
-            int puerto = Integer.parseInt(puertoStr);
-            if (puerto < 0 || puerto > 45003) {
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            return false;
-        }
-
-        return true;
-    }
-
-
-    private void cargarBasesDeDatos() {
-        if (!validarCamposSintacticos()) {
-            lblEstadoBasesDatos.setText("Revisa usuario, servidor y puerto.");
+        if (servidor.isEmpty() || usuario.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Introduce el servidor y el usuario."
+            );
             return;
         }
 
-        String usuario = txtUsuario.getText().trim();
-        String password = new String(txtPassword.getPassword());
-        String servidor = txtServidor.getText().trim();
-        String puerto = txtPuerto.getText().trim();
-        String baseSeleccionada = (String) cbBasesDatos.getSelectedItem();
+        try {
+            int numeroPuerto = Integer.parseInt(puerto);
 
-        String url = "jdbc:mysql://" + servidor + ":" + puerto + "/?useSSL=false&serverTimezone=UTC";
-
-        cbBasesDatos.removeAllItems();
-        lblEstadoBasesDatos.setText("Cargando bases de datos...");
-
-        try (Connection con = DriverManager.getConnection(url, usuario, password);
-             Statement st = con.createStatement();
-             ResultSet rs = st.executeQuery("SHOW DATABASES")) {
-
-            while (rs.next()) {
-                cbBasesDatos.addItem(rs.getString(1));
-            }
-
-            if (cbBasesDatos.getItemCount() == 0) {
-                lblEstadoBasesDatos.setText("El servidor no devolvió bases de datos.");
+            if (numeroPuerto < 1 || numeroPuerto > 45003) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "El puerto debe estar entre 1 y 45003."
+                );
                 return;
             }
 
-            String northwind = buscarBaseDeDatos("northwind");
-            String baseAnterior = baseSeleccionada == null ? null : buscarBaseDeDatos(baseSeleccionada);
-            if (northwind != null) {
-                cbBasesDatos.setSelectedItem(northwind);
-            } else if (baseAnterior != null) {
-                cbBasesDatos.setSelectedItem(baseAnterior);
-            } else {
-                cbBasesDatos.setSelectedIndex(0);
+        } catch (NumberFormatException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Introduce un puerto válido."
+            );
+            return;
+        }
+
+        String url = "jdbc:mysql://" + servidor + ":" + puerto + "/";
+
+        try (
+                Connection con = DriverManager.getConnection(
+                        url,
+                        usuario,
+                        new String(txtPassword.getPassword())
+                );
+
+                Statement st = con.createStatement();
+
+                ResultSet rs = st.executeQuery("SHOW DATABASES")
+        ) {
+
+            while (rs.next()) {
+                cbBases.addItem(rs.getString(1));
             }
-            lblEstadoBasesDatos.setText(cbBasesDatos.getItemCount() + " bases de datos disponibles.");
+
+            if (cbBases.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "No hay bases de datos disponibles."
+                );
+            }
 
         } catch (SQLException e) {
-            lblEstadoBasesDatos.setText("No se pudieron cargar las bases de datos.");
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No se pudieron cargar las bases de datos: "
+                            + e.getMessage()
+            );
         }
     }
 
-    private String buscarBaseDeDatos(String nombre) {
-        for (int i = 0; i < cbBasesDatos.getItemCount(); i++) {
-            String base = cbBasesDatos.getItemAt(i);
-            if (nombre.equalsIgnoreCase(base)) {
-                return base;
-            }
-        }
-        return null;
-    }
+    private void conectar() {
 
-  
-    private void realizarConexion() {
-        String usuario = txtUsuario.getText().trim();
-        String password = new String(txtPassword.getPassword());
-        String servidor = txtServidor.getText().trim();
-        String puerto = txtPuerto.getText().trim();
-        String bd = (String) cbBasesDatos.getSelectedItem();
+        String bd = (String) cbBases.getSelectedItem();
 
-        if (bd == null || bd.isEmpty()) {
-            mostrarResultadoConexion(false);
+        if (bd == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Carga las bases de datos y selecciona una."
+            );
             return;
         }
 
-        String url = "jdbc:mysql://" + servidor + ":" + puerto + "/" + bd + "?useSSL=false&serverTimezone=UTC";
+        String url = "jdbc:mysql://"
+                + txtServidor.getText().trim()
+                + ":"
+                + txtPuerto.getText().trim()
+                + "/"
+                + bd;
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            try (Connection con = DriverManager.getConnection(url, usuario, password)) {
-            }
-        } catch (ClassNotFoundException | SQLException e) {
-            mostrarResultadoConexion(false);
-            return;
+        try (
+                Connection con = DriverManager.getConnection(
+                        url,
+                        txtUsuario.getText().trim(),
+                        new String(txtPassword.getPassword())
+                )
+        ) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Conexión realizada correctamente"
+            );
+
+        } catch (SQLException e) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error al conectar: " + e.getMessage()
+            );
         }
-        mostrarResultadoConexion(true);
-    }
-
-    private void mostrarResultadoConexion(boolean conectado) {
-        String mensaje = conectado ? "Operación exitosa: conectado." : "No se pudo conectar.";
-        String titulo = conectado ? "Éxito" : "Conexión fallida";
-        int tipo = conectado ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE;
-        JOptionPane.showMessageDialog(this, mensaje, titulo, tipo);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new ConexionJava().setVisible(true);
-        });
+
+        SwingUtilities.invokeLater(() ->
+                new ConexionJava().setVisible(true)
+        );
     }
 }
