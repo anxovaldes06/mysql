@@ -1,0 +1,9 @@
+ID|NOMBRE|PRECIO|EXISTENCIAS
+1|Chai|22,03|44
+2|Chang|23,26|17
+35|Steeleye Stout|22,03|20
+38|C�te de Blaye|322,52|17
+39|Chartreuse verte|22,03|69
+43|Ipoh Coffee|56,30|17
+70|Outback Lager|18,36|15
+76|Lakkalik��ri|22,03|57
